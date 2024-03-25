@@ -1,0 +1,33 @@
+Vagrant.configure("2") do |config|
+  # Define the base box
+  config.vm.box = "flatcar-linux-3510.2.8-amd64"
+
+  config.vm.network "public_network",
+    :dev => "br0",
+    :mode => "bridge",
+    :type => "bridge"
+
+  # Kubernetes Master Node
+  config.vm.define "k8s-master" do |master|
+    master.vm.provider "libvirt" do |v|
+      v.memory = 8192
+      v.cpus = 2
+    end
+  end
+
+  # Kubernetes Worker Node 1
+  config.vm.define "k8s-worker1" do |worker1|
+    worker1.vm.provider "libvirt" do |v|
+      v.memory = 8192
+      v.cpus = 2
+    end
+  end
+
+  # Kubernetes Worker Node 2
+  config.vm.define "k8s-worker2" do |worker2|
+    worker2.vm.provider "libvirt" do |v|
+      v.memory = 8192
+      v.cpus = 2
+    end
+  end
+end
