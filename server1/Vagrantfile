@@ -4,7 +4,12 @@ $num_node = 3
 
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/debian12"
-  
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo apt-get update
+    sudo apt-get install -y nfs-common 
+  SHELL
+
   (1..$num_node).each do |i|
     config.vm.define "k8s-#{i}" do |node|
       node.vm.provider "libvirt" do |v|
