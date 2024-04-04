@@ -74,9 +74,9 @@ And add it to virsh :
 virsh net-list
 
 # create libvirt network using existing host bridge
-virsh net-define host-bridge.xml
-virsh net-start host-bridge
-virsh net-autostart host-bridge
+sudo virsh net-define host-bridge.xml
+sudo virsh net-start host-bridge
+sudo virsh net-autostart host-bridge
 
 # state should be active, autostart, and persistent
 virsh net-list --all
