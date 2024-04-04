@@ -13,6 +13,10 @@ Get your ethernet interface (altname) with :
 ip addr show
 ```
 
+```console
+sudo nvim /etc/netplan/00-bridge.yml
+```
+
 Specify the parameters like :
 
 ```yaml
@@ -21,13 +25,13 @@ network:
   renderer: networkd
 
   ethernets:
-    enp0s31f6:
+    eno1:
       dhcp4: false
       dhcp6: false
 
   bridges:
     br0:
-      interfaces: [enp0s31f6]
+      interfaces: [eno1]
       addresses: [192.168.1.200/24]
       routes:
       - to: default
