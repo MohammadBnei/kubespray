@@ -1,5 +1,6 @@
 #!/bin/bash
 
+ssh-keygen -f "/home/mohammad/.ssh/known_hosts" -R "192.168.1.181"
 
 ssh vagrant@192.168.1.181 'sudo bash -c "mkdir /home/vagrant/.kube; cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config && sudo chown -R vagrant /home/vagrant/.kube"'
 

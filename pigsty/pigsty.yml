@@ -19,19 +19,19 @@ all:
     #----------------------------------#
     # infra: monitor, alert, repo, etc..
     #----------------------------------#
-    infra: { hosts: { 192.168.1.211: { infra_seq: 1 } } }
+    infra: { hosts: { 192.168.1.193: { infra_seq: 1 } } }
 
     #----------------------------------#
     # etcd cluster for HA postgres DCS
     #----------------------------------#
-    etcd: { hosts: { 192.168.1.211: { etcd_seq: 1 } }, vars: { etcd_cluster: etcd } }
+    etcd: { hosts: { 192.168.1.193: { etcd_seq: 1 } }, vars: { etcd_cluster: etcd } }
 
     #----------------------------------#
     # minio (OPTIONAL backup repo)
     #----------------------------------#
-    #minio: { hosts: { 192.168.1.211: { minio_seq: 1 } }, vars: { minio_cluster: minio } }
+    minio: { hosts: { 192.168.1.193: { minio_seq: 1 } }, vars: { minio_cluster: minio } }
 
-    ferret: { hosts: { 192.168.1.211: { mongo_seq: 1 } }, vars: { mongo_cluster: ferret } }
+    ferret: { hosts: { 192.168.1.193: { mongo_seq: 1 } }, vars: { mongo_cluster: ferret } }
 
     #----------------------------------#
     # pgsql (singleton on current node)
@@ -39,7 +39,7 @@ all:
     # this is an example single-node postgres cluster with postgis & timescaledb installed, with one biz database & two biz users
     pg-meta:
       hosts:
-        192.168.1.211: { pg_seq: 1, pg_role: primary } # <---- primary instance with read-write capability
+        192.168.1.193: { pg_seq: 1, pg_role: primary } # <---- primary instance with read-write capability
         #10.10.10.x: { pg_seq: 2, pg_role: replica } # <---- read only replica for read-only online traffic
         #10.10.10.y: { pg_seq: 3, pg_role: offline } # <---- offline instance of ETL & interactive queries
       vars:
@@ -51,7 +51,7 @@ all:
             baseline: cmdb.sql              # optional, database sql baseline path, (relative path among ansible search path, e.g: files/)
             schemas: [ pigsty ]             # optional, additional schemas to be created, array of schema names
             extensions:                     # optional, additional extensions to be installed: array of `{name[,schema]}`
-              - { name: postgis     }       # install postgis extension on this database
+              - { name: postgis , schema: public }       # install postgis extension on this database
               - { name: timescaledb }       # install timescaledb extension on this database
             comment: pigsty meta database   # optional, comment string for this database
             #pgbouncer: true                # optional, add this database to pgbouncer database list? true by default
@@ -106,34 +106,14 @@ all:
         pg_libs: 'timescaledb, pg_stat_statements, auto_explain, ferretdb'        # add timescaledb to shared_preload_libraries
         node_crontab: [ '00 01 * * * postgres /pg/bin/pg-backup full' ] # make a full backup every 1am
 
-    #----------------------------------#
-    # example cluster (3-node pg-test)
-    #----------------------------------#
-    #pg-test:                          # define the new 3-node cluster pg-test
-    #  hosts:
-    #    10.10.10.11: { pg_seq: 1, pg_role: primary }   # primary instance, leader of cluster
-    #    10.10.10.12: { pg_seq: 2, pg_role: replica }   # replica instance, follower of leader
-    #    10.10.10.13: { pg_seq: 3, pg_role: replica, pg_offline_query: true } # replica with offline access
-    #  vars:
-    #    pg_cluster: pg-test            # define pgsql cluster name
-    #    pg_users:  [{ name: test , password: test , pgbouncer: true , roles: [ dbrole_admin ] }]
-    #    pg_databases: [{ name: test }] # create a database and user named 'test'
-    #    node_tune: oltp
-    #    pg_conf: oltp.yml
-    #    pg_vip_enabled: true
-    #    pg_vip_address: 10.10.10.3/24
-    #    pg_vip_interface: eth1
-    #    node_crontab:  # make a full backup on monday 1am, and an incremental backup during weekdays
-    #      - '00 01 * * 1 postgres /pg/bin/pg-backup full'
-    #      - '00 01 * * 2,3,4,5,6,7 postgres /pg/bin/pg-backup'
 
   #----------------------------------#
   # GLOBAL VARS
   #----------------------------------#
   vars:                               # global parameters
     version: v2.6.0                   # pigsty version string
-    admin_ip: 192.168.1.211             # admin node ip address
-    region: default                   # upstream mirror region: default,china,europe
+    admin_ip: 192.168.1.193             # admin node ip address
+    region: europe                   # upstream mirror region: default,china,europe
     infra_portal:                     # domain names and upstream servers
       home         : { domain: h.pigsty }
       grafana      : { domain: g.pigsty ,endpoint: "${admin_ip}:3000" , websocket: true }
