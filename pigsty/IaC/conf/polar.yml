@@ -1,0 +1,93 @@
+---
+#==============================================================#
+# File      :   polar.yml
+# Desc      :   Pigsty Local 4-node PolarDB for PG Demo Config
+# Ctime     :   2020-08-05
+# Mtime     :   2025-03-25
+# Docs      :   https://pigsty.io/docs/conf/polar/
+# License   :   AGPLv3 @ https://pigsty.io/docs/about/license
+# Copyright :   2018-2025  Ruohang Feng / Vonng (rh@vonng.com)
+#==============================================================#
+
+# the latest PolarDB for PG kernel is postgresql 15 compatible
+
+all:
+  children:
+
+    # infra singleton for repo, monitoring,...
+    infra:
+      hosts:
+        10.10.10.10: { infra_seq: 1 }
+
+    # etcd singleton for HA postgres DCS
+    etcd:
+      hosts:
+        10.10.10.10: { etcd_seq: 1 }
+      vars:
+        etcd_cluster: etcd
+
+    # polardb singleton
+    pg-meta:
+      hosts:
+        10.10.10.10: { pg_seq: 1, pg_role: primary }
+      vars:
+        pg_cluster: pg-meta
+        pg_users:
+          - {name: dbuser_meta ,password: DBUser.Meta   ,pgbouncer: true ,roles: [dbrole_admin]    ,comment: pigsty admin user }
+          - {name: dbuser_view ,password: DBUser.Viewer ,pgbouncer: true ,roles: [dbrole_readonly] ,comment: read-only viewer for meta database }
+        pg_databases:
+          - {name: meta ,baseline: cmdb.sql ,comment: pigsty meta database ,schemas: [pigsty]}
+        pg_hba_rules:
+          - {user: dbuser_view , db: all ,addr: infra ,auth: pwd ,title: 'allow grafana dashboard access cmdb from infra nodes'}
+        pg_vip_enabled: true
+        pg_vip_address: 10.10.10.2/24
+        pg_vip_interface: eth1
+
+    # polardb 3-node ha cluster: 10.10.10.3 ---> 10.10.10.1{1,2,3}
+    pg-test:
+      hosts:
+        10.10.10.11: { pg_seq: 1, pg_role: primary }   # primary instance, leader of cluster
+        10.10.10.12: { pg_seq: 2, pg_role: replica }   # replica instance, follower of leader
+        10.10.10.13: { pg_seq: 3, pg_role: replica, pg_offline_query: true } # replica with offline access
+      vars:
+        pg_cluster: pg-test           # define pgsql cluster name
+        pg_users:  [{ name: test , password: test , pgbouncer: true , roles: [ dbrole_admin ] }]
+        pg_databases: [{ name: test }]
+        pg_vip_enabled: true
+        pg_vip_address: 10.10.10.3/24
+        pg_vip_interface: eth1
+
+  vars:                               # global variables
+    version: v3.4.1                   # pigsty version string
+    admin_ip: 10.10.10.10             # admin node ip address
+    region: default                   # upstream mirror region: default,china,europe
+    node_tune: oltp                   # node tuning specs: oltp,olap,tiny,crit
+    pg_conf: oltp.yml                 # pgsql tuning specs: {oltp,olap,tiny,crit}.yml
+    #docker_registry_mirrors: ["https://docker.1ms.run", "https://docker.m.daocloud.io"]
+    infra_portal:                     # domain names and upstream servers
+      home         : { domain: h.pigsty }
+      grafana      : { domain: g.pigsty ,endpoint: "${admin_ip}:3000" , websocket: true }
+      prometheus   : { domain: p.pigsty ,endpoint: "${admin_ip}:9090" }
+      alertmanager : { domain: a.pigsty ,endpoint: "${admin_ip}:9093" }
+      blackbox     : { endpoint: "${admin_ip}:9115" }
+      loki         : { endpoint: "${admin_ip}:3100" }
+
+    #----------------------------------#
+    # NODE, PGSQL, PolarDB
+    #----------------------------------#
+    # THIS SPEC REQUIRE AN AVAILABLE POLARDB KERNEL IN THE LOCAL REPO!
+    pg_version: 15
+    pg_packages: [ polardb, pgsql-common ]
+    pg_mode: polar                    # polardb compatible mode
+    pg_exporter_exclude_database: 'template0,template1,postgres,polardb_admin'
+    pg_default_roles:                 # default roles and users in postgres cluster
+      - { name: dbrole_readonly  ,login: false ,comment: role for global read-only access     }
+      - { name: dbrole_offline   ,login: false ,comment: role for restricted read-only access }
+      - { name: dbrole_readwrite ,login: false ,roles: [dbrole_readonly] ,comment: role for global read-write access }
+      - { name: dbrole_admin     ,login: false ,roles: [pg_monitor, dbrole_readwrite] ,comment: role for object creation }
+      - { name: postgres     ,superuser: true  ,comment: system superuser }
+      - { name: replicator   ,superuser: true  ,replication: true ,roles: [pg_monitor, dbrole_readonly] ,comment: system replicator } # <- superuser is required for replication
+      - { name: dbuser_dba   ,superuser: true  ,roles: [dbrole_admin]  ,pgbouncer: true ,pool_mode: session, pool_connlimit: 16 ,comment: pgsql admin user }
+      - { name: dbuser_monitor ,roles: [pg_monitor] ,pgbouncer: true ,parameters: {log_min_duration_statement: 1000 } ,pool_mode: session ,pool_connlimit: 8 ,comment: pgsql monitor user }
+    repo_extra_packages: [ polardb ] # replace vanilla postgres kernel with polardb kernel
+...
