@@ -39,7 +39,6 @@ all:
           dify:     # app name, should have corresponding ~/app/dify folder
             conf:   # override /opt/dify/.env config file
               # A secret key for signing and encryption, gen with `openssl rand -base64 42` (CHANGE PASSWORD!)
-              SECRET_KEY: sk-9f73s3ljTXVcMT3Blb3ljTqtsKiGHXVcMT3BlbkFJLK7U
               DB_USERNAME: dify
               DB_PASSWORD: difyai123456
               DB_HOST: 10.10.10.10
